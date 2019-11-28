@@ -17,9 +17,12 @@ Az INP.TXT állományban több fa leírása található. Az első szám adja meg
 ### input:
  **INP.TXT**
 > 3
+>
 > 3 1 2 1 3 0 0
-> 6 1 2 5 1 3 1 6 3 4 2 0 0
-> 11 6 4 5 6 10 7 7 3 4 3 2 4 8 2 9 8 1 5 6 11 0 0
+>
+>6 1 2 5 1 3 1 6 3 4 2 0 0
+>
+>11 6 4 5 6 10 7 7 3 4 3 2 4 8 2 9 8 1 5 6 11 0 0
 
 ### output:
 > 1. fa: 2
