@@ -2,6 +2,7 @@
 
 Egy T=(V,E) fa átmérője a fában előforduló legrövidebb út távolságok legnagyobbika, azaz:
 ![alt text](https://github.com/gabboraron/Algo2-beadando/blob/master/kep11.JPG "keplet")
+
 Adjunk hatékony algoritmust egy fa átmérőjének kiszámítására. Elemezzük az algoritmus futási idejét!
 (A fát irányítatlan, összefüggő gráfként kezeljük.) (Lehet találni O( V + E ) algoritmust!)
 
@@ -16,8 +17,11 @@ Az INP.TXT állományban több fa leírása található. Az első szám adja meg
 ### input:
  **INP.TXT**
 3
+
 3 1 2 1 3 0 0
+
 6 1 2 5 1 3 1 6 3 4 2 0 0
+
 11 6 4 5 6 10 7 7 3 4 3 2 4 8 2 9 8 1 5 6 11 0 0
 
 ### output:
