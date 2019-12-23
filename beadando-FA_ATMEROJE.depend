@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1576880250 source:/home/ubuntuacer/Documents/suli/algo2/beadando-FA_ATMEROJE/main.cpp
+	<iostream>
+	<fstream>
+	<string>
+	<vector>
+	<stdio.h>
+	<ctype.h>
+	<cstdlib>
+	<deque>
+

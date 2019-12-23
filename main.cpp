@@ -14,26 +14,9 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <cstdlib>
+#include <deque>
 
 using namespace std;
-
-class edge
-{
-    public:
-        int u;              //the begining of the edge
-        int v;              //the end of the edge
-
-        edge(int uu, int vv)
-        {
-            u = uu;
-            v = vv;
-        }
-
-        void print()
-        {
-            std::cout<<"("<<u<<","<<v<<")";
-        }
-};
 
 class vertex
 {
@@ -41,46 +24,96 @@ class vertex
         int point;          //ID
         int parrent;        //parrent of point
         int d;              //distance from the point
+        int color;          //possible values:
+                            //                  1 - white
+                            //                  2 - grey
+                            //                  3 - black
 
         vertex(int p)
         {
             point = p;
-            parrent = 50000;
-            d = 50000;
+            parrent = -50000;
+            d = -50000;
+            color = 1;
         }
+
         void print()
         {
-            cout<<"("<<point<<", p: "<<parrent<<", d: "<<")";
+            cout<<"("<<point<<", p: "<<parrent<<", d: "<<d<<", color:"<<color<<")";
+        }
+
+        void reset_with(vertex v)  //reset the current vertex with the given vertex values (copy)
+        {
+            point = v.point;
+            parrent = v.parrent;
+            d = v.d;
+            color = v.color;
         }
 };
+
+
 
 class Graph
 {
     public:
-        vector<edge> edges;
+        vector<vector<int>> edges; //vectors of indexes of the vertexes from the vertexes vector, but the first value is a real vertex value!
         vector<vertex> vertexes;
 
         //add new edge to the list by vertexpoints ID-s
         void add_edge(int u, int v)
         {
-            edge e(u,v);
-            edges.push_back(e);
+            //find if starter or end vertex exist
+            bool found1 = false; bool found2 = false;
+            int edx=0;
+            while((edx<edges.size()) && (!found1 || !found2))
+            {
+                if(edges[edx][0] == u)
+                {
+                    found1 = true;
+                    edges[edx].push_back(idx_of_vertex(v));
+                }
+
+                if(edges[edx][0] == v)
+                {
+                    found2 = true;
+                    edges[edx].push_back(idx_of_vertex(u));
+                }
+                ++edx;
+            }
+
+            //add a new list if it doesent exists
+            if(!found1)
+            {
+                add_new_vertex_to_edgelist(u,v);
+            }
+
+            if(!found2)
+            {
+                add_new_vertex_to_edgelist(v,u);
+            }
         }
 
         //find an edge by 2 vertexpoint
         bool containsedge(vertex v1, vertex v2)
         {
-            edge e(v1.point,v2.point);
             for(int i=0; i<edges.size(); ++i)
             {
-                //find vice-versa in the possible edges (because of undirected graph
-                if(((e.u == edges[i].u) && (e.v == edges[i].v)) || ((e.u == edges[i].v) && (e.v == edges[i].u)))
-                    return true;
+                if(edges[i][0] == v1.point)
+                {
+                    for(int vdx=1; vdx<edges[i].size(); ++vdx)
+                        if(v2.point == vertexes[edges[i][vdx]].point)
+                        {
+                            //cout<<"edge found: "<<v1.point<<" to "<<v2.point<<endl; //LOG
+                            return true;
+                        }
+                }
             }
             return false;
         }
 
-        //new vertex
+        /*
+        * add new vertex to the vertex list
+        */
         void add_vertex(vertex v)
         {
             bool available = false;
@@ -94,20 +127,34 @@ class Graph
                 vertexes.push_back(v);
         }
 
-        //print the whole list
-        void print_edges()
+        void print()
         {
-            for(int idx=0; idx<edges.size(); idx++)
+            print_vertexes();
+            cout<<endl<<"EDGES: "<<endl;
+            for(int i=0; i<edges.size(); ++i)
             {
-                edges[idx].print();
-                cout<<"; ";
+                cout<<edges[i][0]<<": "<<endl;
+                for(int j=1; j<edges[i].size(); ++j)
+                    cout<<"\t"<<vertexes[edges[i][j]].point<<endl;
             }
-            cout<<endl;
         }
 
-        //print the whole list
+        void reinit() //reinit the d, color and parrent values for the second turn
+        {
+            for(int idx=0; idx<vertexes.size(); ++idx)
+            {
+                vertexes[idx].d = -50000;
+                vertexes[idx].parrent = -50000;
+                vertexes[idx].color = 1;
+            }
+        }
+
+    private:
+
+        //print the whole vertex list
         void print_vertexes()
         {
+            cout<<"VERTEXES:"<<endl;
             for(int idx=0; idx<vertexes.size(); idx++)
             {
                 vertexes[idx].print();
@@ -115,90 +162,141 @@ class Graph
             }
             cout<<endl;
         }
-};
 
-
-//create graphs db from the input file
-vector<Graph> readData(string filename){
-  ifstream myfile;
-  myfile.open (filename);
-  //cout << "Opening...";
-
-  string nr_of_threes_st;
-  getline (myfile,nr_of_threes_st);
-  int nr_of_threes_int = std::stoi(nr_of_threes_st);
-
-  vector<Graph> graphs;
-  for(int gidx=0; gidx<=nr_of_threes_int; gidx++)
-  {
-    //read and convert the current line into a vector of int
-    string tmpline;
-    getline(myfile,tmpline);
-	vector<int>line;
-	for (int i = 0; i < tmpline.length()-4; i++)
-	{
-        if(!isspace(tmpline[i]))
+        //create new edgelist into vector of edges
+        //the first element is the real id of the vertex
+        //the rest of elements are indexes of the vertexes from the 'vertexes' vector
+        void add_new_vertex_to_edgelist(int v, int u)
         {
-            line.push_back((int)tmpline[i]);
+            vector<int> tmp;
+            tmp.push_back(v);
+            tmp.push_back(idx_of_vertex(u));
+            edges.push_back(tmp);
         }
-	}
 
-    //processing of a line
-    Graph g;
-    for(int edgeidx=1; edgeidx<=line[0]; edgeidx+=2)
-    {
-        g.add_edge(line[edgeidx], line[edgeidx+1]);
-        g.add_vertex(line[edgeidx]);
-        g.add_vertex(line[edgeidx+1]);
-    }
-    graphs.push_back(g);
-  }
-  myfile.close();
-
-
-  return graphs;
-}
+        //return the index of a vertex from the vector of 'vertexes'
+        int idx_of_vertex(int v)
+        {
+            bool found = false;
+            int idx = 0;
+            while(!found && idx<vertexes.size())
+            {
+                if(vertexes[idx].point == v)
+                {
+                    found = true;
+                    return idx;
+                }
+                ++idx;
+            }
+        }
+};
 
 /*
     Forrás:     http://aszt.inf.elte.hu/~asvanyi/ad/ad2jegyzet.pdf#page=38
 */
-int BFS(Graph g)
+vertex BFS(Graph g, vertex startingpoint)
 {
-    int maxd = 0;
+    g.reinit();
+    //g.print();//LOG
+    vertex vertex_with_max_d(startingpoint.point);
+    vertex_with_max_d.reset_with(startingpoint);
+    //vertex_with_max_d.print(); //LOG
+    /*g.vertexes[0].d = 0;//s
+    g.vertexes[0].color = 2;//s    //grey*/
 
-    g.vertexes[0].d = 0;
-    vector<vertex> bfs_queue;
-    bfs_queue.push_back(g.vertexes[0]);
+    startingpoint.d = 0;
+    startingpoint.color = 2;
+    deque<vertex> bfs_queue;
+    //bfs_queue.push_back(g.vertexes[0]);
+    bfs_queue.push_back(startingpoint);
     while(!bfs_queue.empty())
     {
-        vertex u = bfs_queue.back();
-        int vidx = 0;
+        vertex u = bfs_queue.front();
+        bfs_queue.pop_front();
+        //cout<<"ROUTE FROM ";u.print(); cout<<" TO "    //LOG
         for(int vidx=0; vidx<g.vertexes.size(); ++vidx)
         {
             if(g.containsedge(u, g.vertexes[vidx]))
-                if(g.vertexes[vidx].d == 50000)
+                if(g.vertexes[vidx].d == -50000)
                 {
                     g.vertexes[vidx].d = u.d + 1;
                     g.vertexes[vidx].parrent = u.point;
+                    g.vertexes[vidx].color = 2; //grey
                     bfs_queue.push_back(g.vertexes[vidx]);
-                    if(maxd<g.vertexes[vidx].d)
-                        maxd = g.vertexes[vidx].d;
+                    if(vertex_with_max_d.d<g.vertexes[vidx].d)
+                        //vertex_with_max_d.print();cout<<"->";g.vertexes[vidx].print();cout<<endl;//LOG
+                        vertex_with_max_d.reset_with(g.vertexes[vidx]);
                 }
         }
+//LOG
+//cout<<"for ended"<<endl;
+/*for(int i=0;i<bfs_queue.size(); ++i)
+  bfs_queue[i].print();
+cout<<endl<<"----------"<<endl;*/
+//LOG
+        u.color = 3; //black
     }
-
-    return maxd;
+//LOG
+/*
+cout<<"OUTPUT GRAPH: ";
+g.print();
+cout<<endl;*/
+//LOG
+    //cout<<"RETURNED VERTEX: ";vertex_with_max_d.print();//LOG
+    return vertex_with_max_d;
 }
 
 
 int main(int argc, char** argv)
 {
-    vector<Graph> graphs = readData(argv[0]); //read data into a vector of graphs from the command line entered parameter
+//cout<<"Opening "<<argv[1]<<endl;                     //LOG
+  //open the command lien argument
+  string filename = argv[1];
+  ifstream myfile;
+  myfile.open (filename);
 
-    for(int i=0; i<graphs.size(); ++i)
-    {
-        cout<<i<<". fa: "<<BFS(graphs[i])<<endl;
-    }
-    return 0;
+  int nr_of_threes_int;
+  myfile>>nr_of_threes_int;
+//cout<<"nr of threes "<<nr_of_threes_int<<endl;        //LOG
+  //iterate on the graphs
+  for(int gidx=0; gidx<nr_of_threes_int; gidx++)
+  {
+    //read and create the graph
+    int nr_of_vertexes; //nr of the vertexes in the current graph (the first value)
+    myfile>>nr_of_vertexes;
+    Graph g;    //the current graph
+    int u,v;    //the first 2 value in the graph, v and u are vertexes, and (v,u) is an edge
+    myfile>>u>>v;
+	while (!(u==0 && v==0))
+	{
+        //add vertexes of u and v
+        vertex uu(u);
+        g.add_vertex(uu);
+
+        vertex vv(v);
+        g.add_vertex(vv);
+//cout<<"added vertexes: "<<u<<", "<<v<<endl;           //LOG
+        //add edge
+        g.add_edge(u,v);
+//cout<<"added edge"<<endl;                             //LOG
+        myfile>>u>>v;
+	}
+//LOG
+/*
+cout<<"INPUT GRAPH: ";
+g.print();
+cout<<endl;
+*/
+//LOG
+	if(nr_of_vertexes != g.vertexes.size())
+        cout<<"READING ERROR IN GRAPH "<<gidx<<endl;
+
+    //processing of the current graph
+    cout<<gidx+1<<". fa: "<<BFS(g,BFS(g,g.vertexes[0])).d<<endl;
+   // cout<<"****************************"<<endl;
+  }
+  myfile.close();
+
+  return 0;
 }
 
